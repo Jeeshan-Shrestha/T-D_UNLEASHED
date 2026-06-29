@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -33,6 +34,12 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         playerNumber.text = "PLAYER " + playerTurn;
+
+        if (player2Health.health <= 0)
+        {
+            playerAttackTimeline.PlayPlayer1FinisherTimeline();
+            GameOver();
+        }
     }
 
     public void Truth()
@@ -67,30 +74,31 @@ public class GameManager : MonoBehaviour
     {
         truthOrDareText.text = "";
         completeOrFailButton.SetActive(false);
-        StartCoroutine(fade.FadeRoutine());
         if (playerTurn == 1)
         {
+            playerAttackTimeline.PlayPlayer1DodgeTimeline();
             playerTurn = 2;
         }
         else
         {
+            playerAttackTimeline.PlayPlayer2DodgeTimeline();
             playerTurn = 1;
         }
     }
-
+//Vector3(3.74803948,2.61052036,-0.937654197)
     public void Failed()
     {
         truthOrDareText.text = "";
         completeOrFailButton.SetActive(false);
         if (playerTurn == 1)
         {
-            StartCoroutine(fade.FadeRoutine());
+            playerAttackTimeline.PlayPlayer2AttackTimeline();
             player1Health.TakeDamage(20);
             playerTurn = 2;
         }
         else
         {
-            playerAttackTimeline.PlayPlayer1Timeline();
+            playerAttackTimeline.PlayPlayer1AttackTimeline();
             player2Health.TakeDamage(20);
             playerTurn = 1;
         }
@@ -98,6 +106,8 @@ public class GameManager : MonoBehaviour
 
     public void GameOver()
     {
+        ui.uiPanel.SetActive(false);
+        SceneManager.LoadScene("MainGame");
         Debug.Log("Game Over");
     }
 }
