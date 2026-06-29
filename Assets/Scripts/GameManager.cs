@@ -14,6 +14,12 @@ public class GameManager : MonoBehaviour
     public GameObject truthOrDareButton;
     public TextFade fade;
 
+    public Player1HealthScripts player1Health;
+    public Player2HealthScripts player2Health;
+
+
+    public PlayerAttackTimeline playerAttackTimeline;
+
 
     
 
@@ -76,14 +82,22 @@ public class GameManager : MonoBehaviour
     {
         truthOrDareText.text = "";
         completeOrFailButton.SetActive(false);
-        StartCoroutine(fade.FadeRoutine());
         if (playerTurn == 1)
         {
+            StartCoroutine(fade.FadeRoutine());
+            player1Health.TakeDamage(20);
             playerTurn = 2;
         }
         else
         {
+            playerAttackTimeline.PlayPlayer1Timeline();
+            player2Health.TakeDamage(20);
             playerTurn = 1;
         }
+    }
+
+    public void GameOver()
+    {
+        Debug.Log("Game Over");
     }
 }

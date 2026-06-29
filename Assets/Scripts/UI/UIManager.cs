@@ -15,6 +15,7 @@ public class UIManager : MonoBehaviour
         uiPanel.SetActive(false);
         bgMusic.Stop();
         director.stopped += OnTimelineFinished;
+        // OnTimelineFinished(director);
     }
 
     void OnTimelineFinished(PlayableDirector pd)

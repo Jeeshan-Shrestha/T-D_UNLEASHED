@@ -6,13 +6,12 @@ public class TextFade : MonoBehaviour
 {
     public TextMeshProUGUI text;
     public float fadeDuration = 1f;
-    public float visibleTime = 3f;
+    public float visibleTime = 1.5f;
     public float blinkSpeed = 0.15f;   // Time between blinks
 
     public GameObject buttonObject;
     void Start()
     {
-        buttonObject.SetActive(false);
     }
 
     public IEnumerator FadeRoutine()
@@ -20,6 +19,7 @@ public class TextFade : MonoBehaviour
         Color c = text.color;
         c.a = 0;
         text.color = c;
+        buttonObject.SetActive(false);
 
         // Fade in
         yield return StartCoroutine(Fade(0, 1));
