@@ -4,110 +4,163 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
-
+    [Header("References")]
     public UIManager ui;
-    public int playerTurn = 1;
     public TextMeshProUGUI playerNumber;
     public TextMeshProUGUI truthOrDareText;
-
-    // public GameObject tOrDButton;
-    public GameObject completeOrFailButton;
-    public GameObject truthOrDareButton;
-    public TextFade fade;
-
     public Player1HealthScripts player1Health;
     public Player2HealthScripts player2Health;
-
-
     public PlayerAttackTimeline playerAttackTimeline;
 
+    [Header("UI Panels/Buttons")]
+    public GameObject levelSelectButtons;   // panel with Level 1 / 2 / 3 buttons
+    public GameObject truthOrDareButton;    // panel with Truth / Dare buttons
+    public GameObject completeOrFailButton; // panel with Complete / Fail buttons
+    public TextFade fade;
+    [Header("Game State")]
+    public int playerTurn = 1;
 
-    
+    private TruthDareLoader loader;
+    private bool gameEnded = false;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    private int selectedLevel = 1;
+    private string selectedType;
+    public GameObject truthOrDare;
+
     void Start()
     {
+        loader = FindObjectOfType<TruthDareLoader>();
+
         completeOrFailButton.SetActive(false);
+        truthOrDareButton.SetActive(false);
+        levelSelectButtons.SetActive(true);
+
+        playerAttackTimeline.OnFinisherFinished += GameOver;
     }
 
-    // Update is called once per frame
+    void OnDestroy()
+    {
+        playerAttackTimeline.OnFinisherFinished -= GameOver;
+    }
+
     void Update()
     {
         playerNumber.text = "PLAYER " + playerTurn;
 
+        if (gameEnded) return;
+
         if (player2Health.health <= 0)
         {
+            gameEnded = true;
+            HideGameplayUI();
             playerAttackTimeline.PlayPlayer1FinisherTimeline();
-            GameOver();
         }
+        else if (player1Health.health <= 0)
+        {
+            gameEnded = true;
+            HideGameplayUI();
+            playerAttackTimeline.PlayPlayer2FinisherTimeline();
+        }
+    }
+
+
+    public void SelectLevel1() => SelectLevel(1);
+    public void SelectLevel2() => SelectLevel(2);
+    public void SelectLevel3() => SelectLevel(3);
+
+    private void SelectLevel(int level)
+    {
+        selectedLevel = level;
+        levelSelectButtons.SetActive(false);
+        truthOrDare.SetActive(true);
+        StartCoroutine(fade.FadeRoutine());
     }
 
     public void Truth()
     {
-        completeOrFailButton.SetActive(true);
-        truthOrDareButton.SetActive(false);
-        if (playerTurn == 1)
-        {
-            truthOrDareText.text = "display some truth data";
-        }
-        else
-        {
-            truthOrDareText.text = "display some truth data";
-        }
+        selectedType = "Truth";
+        ShowPrompt();
     }
 
     public void Dare()
     {
-        completeOrFailButton.SetActive(true);
-        truthOrDareButton.SetActive(false);
-        if (playerTurn == 1)
-        {
-            truthOrDareText.text= "display some dare data";
-        }
-        else
-        {
-            truthOrDareText.text= "display some dare data";
-        }
+        selectedType = "Dare";
+        ShowPrompt();
     }
 
-    public void Completed()
+    private void ShowPrompt()
+    {
+        truthOrDareButton.SetActive(false);
+        completeOrFailButton.SetActive(true);
+
+        TruthDareItem prompt = loader.GetRandomExact(selectedLevel, selectedType);
+        truthOrDareText.text = prompt != null ? prompt.summary : "No prompt found.";
+    }
+
+
+   public void Completed()
     {
         truthOrDareText.text = "";
+        truthOrDare.SetActive(false);
         completeOrFailButton.SetActive(false);
+        truthOrDareButton.SetActive(false);
+
         if (playerTurn == 1)
-        {
-            playerAttackTimeline.PlayPlayer1DodgeTimeline();
-            playerTurn = 2;
-        }
+            playerAttackTimeline.PlayPlayer1DodgeTimeline(EndTurn);
         else
-        {
-            playerAttackTimeline.PlayPlayer2DodgeTimeline();
-            playerTurn = 1;
-        }
+            playerAttackTimeline.PlayPlayer2DodgeTimeline(EndTurn);
     }
-//Vector3(3.74803948,2.61052036,-0.937654197)
+
     public void Failed()
     {
         truthOrDareText.text = "";
         completeOrFailButton.SetActive(false);
+        truthOrDare.SetActive(false);
+        truthOrDareButton.SetActive(false);
+
+        int damage = GetDamageForLevel(selectedLevel);
+
         if (playerTurn == 1)
         {
-            playerAttackTimeline.PlayPlayer2AttackTimeline();
-            player1Health.TakeDamage(20);
-            playerTurn = 2;
+            playerAttackTimeline.PlayPlayer2AttackTimeline(EndTurn);
+            player1Health.TakeDamage(damage);
         }
         else
         {
-            playerAttackTimeline.PlayPlayer1AttackTimeline();
-            player2Health.TakeDamage(20);
-            playerTurn = 1;
+            playerAttackTimeline.PlayPlayer1AttackTimeline(EndTurn);
+            player2Health.TakeDamage(damage);
+        }
+    } 
+
+    private void EndTurn()
+    {
+        playerTurn = playerTurn == 1 ? 2 : 1;
+        levelSelectButtons.SetActive(true);
+    }
+
+    private int GetDamageForLevel(int level)
+    {
+        switch (level)
+        {
+            case 1: return 30;
+            case 2: return 20;
+            case 3: return 10;
+            default: return 20;
         }
     }
+
+    private void HideGameplayUI()
+    {
+        truthOrDareText.text = "";
+        levelSelectButtons.SetActive(false);
+        truthOrDareButton.SetActive(false);
+        completeOrFailButton.SetActive(false);
+    }
+
 
     public void GameOver()
     {
         ui.uiPanel.SetActive(false);
-        SceneManager.LoadScene("MainGame");
-        Debug.Log("Game Over");
+        SceneManager.LoadScene("MenuScene");
     }
 }

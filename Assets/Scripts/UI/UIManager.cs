@@ -1,17 +1,13 @@
-using System;
 using UnityEngine;
 using UnityEngine.Playables;
-using UnityEngine.UIElements;
 
 public class UIManager : MonoBehaviour
 {
     [SerializeField] PlayableDirector director;
-    [SerializeField]public  GameObject uiPanel;
-    [SerializeField] AudioSource bgMusic;
-
+    [SerializeField] public GameObject uiPanel;
+    public AudioManager audioManager;
     [SerializeField] Transform cameraPos;
-
-    public TextFade fade;
+    public GameObject levelSelectButtons; // NEW: reference to level select panel
 
     Vector3 tempCameraPos;
     Quaternion tempCameraRot;
@@ -19,24 +15,23 @@ public class UIManager : MonoBehaviour
     void Start()
     {
         uiPanel.SetActive(false);
-        bgMusic.Stop();
         tempCameraPos = cameraPos.position;
         tempCameraRot = cameraPos.rotation;
-        // director.stopped += OnTimelineFinished;
+
         OnTimelineFinished(director);
     }
 
     void OnTimelineFinished(PlayableDirector pd)
     {
         uiPanel.SetActive(true);
-        StartCoroutine(fade.FadeRoutine());
-        cameraPos.SetPositionAndRotation(tempCameraPos,tempCameraRot);
-        bgMusic.Play();
+        cameraPos.SetPositionAndRotation(tempCameraPos, tempCameraRot);
+        audioManager.PlayBgMusic();
+
+        levelSelectButtons.SetActive(true); 
     }
 
     void OnDestroy()
     {
         director.stopped -= OnTimelineFinished;
     }
-
 }

@@ -26,8 +26,6 @@ void Start()
         health = Mathf.Clamp(health, 0, maxHealth);
 
         UpdateHealthUI();
-        if (health <= 0)
-            gameManager.GameOver();
     }
     public void UpdateHealthUI()
     {

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Playables;
 
@@ -8,110 +9,52 @@ public class PlayerAttackTimeline : MonoBehaviour
     [SerializeField] PlayableDirector player1DodgeTimeline;
     [SerializeField] PlayableDirector player2DodgeTimeline;
     [SerializeField] PlayableDirector player1FinisherTimeline;
+    [SerializeField] PlayableDirector player2FinisherTimeline;
     public TextFade fade;
-
     [SerializeField] private Transform player1Transform;
     [SerializeField] private Transform player2Transform;
     [SerializeField] private Transform cameraTransform;
+    private Vector3 player1Pos, player2Pos, cameraPos;
+    private Quaternion player1Rot, player2Rot, cameraRot;
+    public event Action OnFinisherFinished;
 
-    private Vector3 player1Pos;
-    private Vector3 player2Pos;
-    private Quaternion player1Rot;
-    private Quaternion player2Rot;
+    public void PlayPlayer1AttackTimeline(Action onComplete = null) => Play(player1AttackTimeline, onComplete: onComplete);
+    public void PlayPlayer2AttackTimeline(Action onComplete = null) => Play(player2AttackTimeline, onComplete: onComplete);
+    public void PlayPlayer1DodgeTimeline(Action onComplete = null)  => Play(player1DodgeTimeline, onComplete: onComplete);
+    public void PlayPlayer2DodgeTimeline(Action onComplete = null)  => Play(player2DodgeTimeline, onComplete: onComplete);
+    public void PlayPlayer1FinisherTimeline() => Play(player1FinisherTimeline, isFinisher: true);
+    public void PlayPlayer2FinisherTimeline() => Play(player2FinisherTimeline, isFinisher: true);
 
-    private Vector3 cameraPos;
-    private Quaternion cameraRot;
+    private void Play(PlayableDirector director, bool isFinisher = false, Action onComplete = null)
+    {
+        SnapshotTransforms();
+        director.Play();
+        void Handler(PlayableDirector pd)
+        {
+            director.stopped -= Handler;
+            OnTimelineFinished(pd, isFinisher, onComplete);
+        }
+        director.stopped += Handler;
+    }
 
-    public void PlayPlayer1AttackTimeline()
+    private void SnapshotTransforms()
     {
         player1Pos = player1Transform.position;
         player1Rot = player1Transform.rotation;
-        
         player2Pos = player2Transform.position;
-        player2Rot = player2Transform.rotation; 
-
+        player2Rot = player2Transform.rotation;
         cameraPos = cameraTransform.position;
         cameraRot = cameraTransform.rotation;
-
-        player1AttackTimeline.Play();
-        player1AttackTimeline.stopped += OnPlayer1AttackTimelineFinished;
     }
 
-    public void PlayPlayer2AttackTimeline()
-    {
-        player1Pos = player1Transform.position;
-        player1Rot = player1Transform.rotation;
-        
-        player2Pos = player2Transform.position;
-        player2Rot = player2Transform.rotation; 
-
-        cameraPos = cameraTransform.position;
-        cameraRot = cameraTransform.rotation;  
-        player2AttackTimeline.Play();
-        player2AttackTimeline.stopped += OnPlayer2AttackTimelineFinished;
-    }
-    public void PlayPlayer1DodgeTimeline()
-    {
-        player1Pos = player1Transform.position;
-        player1Rot = player1Transform.rotation;
-        
-        player2Pos = player2Transform.position;
-        player2Rot = player2Transform.rotation; 
-
-        cameraPos = cameraTransform.position;
-        cameraRot = cameraTransform.rotation;  
-        player1DodgeTimeline.Play();
-        player1DodgeTimeline.stopped += OnPlayer1AttackTimelineFinished;
-    }
-
-    public void PlayPlayer2DodgeTimeline()
-    {
-        player1Pos = player1Transform.position;
-        player1Rot = player1Transform.rotation;
-        
-        player2Pos = player2Transform.position;
-        player2Rot = player2Transform.rotation; 
-
-        cameraPos = cameraTransform.position;
-        cameraRot = cameraTransform.rotation;  
-        player2DodgeTimeline.Play();
-        player2DodgeTimeline.stopped += OnPlayer2AttackTimelineFinished;
-    }
-
-    public void PlayPlayer1FinisherTimeline()
-    {
-        player1Pos = player1Transform.position;
-        player1Rot = player1Transform.rotation;
-        
-        player2Pos = player2Transform.position;
-        player2Rot = player2Transform.rotation; 
-
-        cameraPos = cameraTransform.position;
-        cameraRot = cameraTransform.rotation;
-
-        player1FinisherTimeline.Play();
-        player1FinisherTimeline.stopped += OnPlayer1AttackTimelineFinished;
-        
-    }
- 
-    void OnPlayer2AttackTimelineFinished(PlayableDirector pd)
+    private void OnTimelineFinished(PlayableDirector pd, bool isFinisher, Action onComplete)
     {
         player1Transform.SetPositionAndRotation(player1Pos, player1Rot);
         player2Transform.SetPositionAndRotation(player2Pos, player2Rot);
         cameraTransform.SetPositionAndRotation(cameraPos, cameraRot);
-        StartCoroutine(fade.FadeRoutine());   
-    }
-    void OnPlayer1AttackTimelineFinished(PlayableDirector pd)
-    {
-        player1Transform.SetPositionAndRotation(player1Pos, player1Rot);
-        player2Transform.SetPositionAndRotation(player2Pos, player2Rot);
-        cameraTransform.SetPositionAndRotation(cameraPos, cameraRot);
-        StartCoroutine(fade.FadeRoutine());
-    }
+        if (isFinisher)
+            OnFinisherFinished?.Invoke();
 
-    void OnDestroy()
-    {
-        player1AttackTimeline.stopped -= OnPlayer1AttackTimelineFinished;
-        player2AttackTimeline.stopped -= OnPlayer2AttackTimelineFinished;
+        onComplete?.Invoke();
     }
 }
